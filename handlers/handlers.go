@@ -3,7 +3,6 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,38 +15,87 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func GetUsers(ctx *gin.Context) {
+        db := database.DB 
+	    var users []models.User
+	    db.Find(&users)
+        ctx.JSON(200, gin.H{
+       "solo post": users,
+    }) 
+}
+
 func CreateTask(ctx *gin.Context) {
 	time.Sleep(1 * time.Second)
 
-    session := sessions.Default(ctx)
-    profile := session.Get("profile")
-    var userId string
+    // session := sessions.Default(ctx)
+    // profile := session.Get("profile")
+    // var userId uint = 1
 
+    /*
     if profileMap, ok := profile.(map[string]interface{}); ok {
-    userId = profileMap["sid"].(string)
+    userId = profileMap["sub"].(string)
     } else {
         fmt.Println("Perfil no válido")
     }
+    */
 
 	name := ctx.PostForm("name")
 
 	var task models.Task
     db := database.DB
-    task = models.Task{Name: name, UserId: userId}
+    task = models.Task{Name: name} 	// UserID: userId}
 	db.Create(&task)
+}
+
+// Agarrar el sub desde profile
+// check si existe en la base de datos
+// Si no existe creo un nuevo usuario
+// Si existe response que ya existe el usuario
+
+
+func CheckIfExists(ctx *gin.Context) {
+    db := database.DB
+    var user models.User
+
+    session := sessions.Default(ctx)
+    profile := session.Get("profile")
+
+    sub := profile.(map[string]interface{})["sub"].(string) // Obtener el Sub del mapa profile
+    nickname := profile.(map[string]interface{})["nickname"].(string) // Obtener el Nickname del mapa profile
+
+    if err := db.First(&user, "sub = ?", sub).Error; err != nil {
+        // El usuario no existe, créalo
+        user = models.User{
+            Sub:      sub,
+            Nickname: nickname,
+        }
+        db.Create(&user)
+        ctx.JSON(200, gin.H{
+            "message": "Usuario creado con éxito :D",
+        })
+    } else {
+        // El usuario ya existe, devuelve un mensaje de error
+        ctx.JSON(200, gin.H{
+            "error": "El usuario ya existe y no se creó",
+        })
+    }
 }
 
 func User(ctx *gin.Context) {
     db := database.DB
     var tasks []models.Task
-    db.Find(&tasks)
+    
+    // Consulta las tareas y carga la relación "User"
+    if err := db.Preload("User").Find(&tasks).Error; err != nil {
+        ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
 
-	session := sessions.Default(ctx)
-	profile := session.Get("profile")
+    session := sessions.Default(ctx)
+    profile := session.Get("profile")
 
-    // Renderiza el archivo HTML y pasa las tareas como datos
     ctx.HTML(http.StatusOK, "user.html", gin.H{
-        "tasks": tasks,
+        "tasks":   tasks,
         "profile": profile,
     })
 }
@@ -146,6 +194,7 @@ func Callback(auth *auth.Authenticator) gin.HandlerFunc {
 
 		session.Set("access_token", token.AccessToken)
 		session.Set("profile", profile)
+
 		if err := session.Save(); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return

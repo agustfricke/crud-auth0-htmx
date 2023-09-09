@@ -31,6 +31,8 @@ func New(auth *auth.Authenticator) *gin.Engine {
 	router.GET("/user", middleware.IsAuthenticated, handlers.User)
 	router.GET("/logout", handlers.Logout)
     router.POST("/add", middleware.IsAuthenticated, handlers.CreateTask)
+	router.GET("/check", middleware.IsAuthenticated, handlers.CheckIfExists)
+	router.GET("/users", middleware.IsAuthenticated, handlers.GetUsers)
 
 	return router
 }
