@@ -20,37 +20,52 @@ func GetUsers(ctx *gin.Context) {
 	    var users []models.User
 	    db.Find(&users)
         ctx.JSON(200, gin.H{
-       "solo post": users,
+       "users": users,
+    }) 
+}
+
+func GetTasks(ctx *gin.Context) {
+        db := database.DB 
+	    var tasks []models.Task
+	    db.Find(&tasks)
+
+        if err := db.Preload("User").Find(&tasks).Error; err != nil {
+            ctx.JSON(500, gin.H{
+            "error": err,
+        }) 
+        return
+        }
+        
+        ctx.JSON(200, gin.H{
+       "tasks": tasks,
+
     }) 
 }
 
 func CreateTask(ctx *gin.Context) {
 	time.Sleep(1 * time.Second)
 
-    // session := sessions.Default(ctx)
-    // profile := session.Get("profile")
-    // var userId uint = 1
+    db := database.DB
+    var user models.User
 
-    /*
-    if profileMap, ok := profile.(map[string]interface{}); ok {
-    userId = profileMap["sub"].(string)
-    } else {
-        fmt.Println("Perfil no válido")
+    session := sessions.Default(ctx)
+    profile := session.Get("profile")
+
+    sub := profile.(map[string]interface{})["sub"].(string) 
+
+    if err := db.First(&user, "sub = ?", sub).Error; err != nil {
+        ctx.JSON(404, gin.H{
+            "error": "El usuario no existe",
+        })
+        // redirect
     }
-    */
 
 	name := ctx.PostForm("name")
 
 	var task models.Task
-    db := database.DB
-    task = models.Task{Name: name} 	// UserID: userId}
+    task = models.Task{Name: name, UserID: user.ID} 	
 	db.Create(&task)
 }
-
-// Agarrar el sub desde profile
-// check si existe en la base de datos
-// Si no existe creo un nuevo usuario
-// Si existe response que ya existe el usuario
 
 
 func CheckIfExists(ctx *gin.Context) {
@@ -60,11 +75,10 @@ func CheckIfExists(ctx *gin.Context) {
     session := sessions.Default(ctx)
     profile := session.Get("profile")
 
-    sub := profile.(map[string]interface{})["sub"].(string) // Obtener el Sub del mapa profile
-    nickname := profile.(map[string]interface{})["nickname"].(string) // Obtener el Nickname del mapa profile
+    sub := profile.(map[string]interface{})["sub"].(string) 
+    nickname := profile.(map[string]interface{})["nickname"].(string) 
 
     if err := db.First(&user, "sub = ?", sub).Error; err != nil {
-        // El usuario no existe, créalo
         user = models.User{
             Sub:      sub,
             Nickname: nickname,
@@ -74,7 +88,6 @@ func CheckIfExists(ctx *gin.Context) {
             "message": "Usuario creado con éxito :D",
         })
     } else {
-        // El usuario ya existe, devuelve un mensaje de error
         ctx.JSON(200, gin.H{
             "error": "El usuario ya existe y no se creó",
         })
@@ -85,7 +98,6 @@ func User(ctx *gin.Context) {
     db := database.DB
     var tasks []models.Task
     
-    // Consulta las tareas y carga la relación "User"
     if err := db.Preload("User").Find(&tasks).Error; err != nil {
         ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -100,7 +112,6 @@ func User(ctx *gin.Context) {
     })
 }
 
-// Handler for our logout.
 func Logout(ctx *gin.Context) {
 	logoutUrl, err := url.Parse("https://" + os.Getenv("AUTH0_DOMAIN") + "/v2/logout")
 	if err != nil {
@@ -136,7 +147,6 @@ func Login(auth *auth.Authenticator) gin.HandlerFunc {
 			return
 		}
 
-		// Save the state inside the session.
 		session := sessions.Default(ctx)
 		session.Set("state", state)
 		if err := session.Save(); err != nil {
@@ -164,7 +174,6 @@ func Home(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "home.html", nil)
 }
 
-// Handler for our callback.
 func Callback(auth *auth.Authenticator) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		session := sessions.Default(ctx)
@@ -173,7 +182,6 @@ func Callback(auth *auth.Authenticator) gin.HandlerFunc {
 			return
 		}
 
-		// Exchange an authorization code for a token.
 		token, err := auth.Exchange(ctx.Request.Context(), ctx.Query("code"))
 		if err != nil {
 			ctx.String(http.StatusUnauthorized, "Failed to convert an authorization code into a token.")
@@ -200,7 +208,6 @@ func Callback(auth *auth.Authenticator) gin.HandlerFunc {
 			return
 		}
 
-		// Redirect to logged in page.
 		ctx.Redirect(http.StatusTemporaryRedirect, "/user")
 	}
 }

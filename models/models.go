@@ -13,6 +13,6 @@ type User struct {
 type Task struct {
 	gorm.Model
 	Name        string  `gorm:"not null"`
-	UserID      uint    
+	UserID      uint
     User        User    `gorm:"foreignKey:UserID"`
 }

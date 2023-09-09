@@ -33,6 +33,7 @@ func New(auth *auth.Authenticator) *gin.Engine {
     router.POST("/add", middleware.IsAuthenticated, handlers.CreateTask)
 	router.GET("/check", middleware.IsAuthenticated, handlers.CheckIfExists)
 	router.GET("/users", middleware.IsAuthenticated, handlers.GetUsers)
+	router.GET("/tasks", middleware.IsAuthenticated, handlers.GetTasks)
 
 	return router
 }
