@@ -1,0 +1,21 @@
+<h1 class="text-3xl text-red-500">User profile</h1>
+<ul>
+    <div class="bg-gray-900 m-2">
+        <li class="text-red-500">{{ .User.Nickname }}</li>
+        <li class="text-red-500">{{ .User.ID }}</li>
+        <li class="text-red-500">{{ .User.Sub }}</li>
+        <br>
+
+
+        {{ range .User.Tasks }}
+        <div class="bg-gray-900 m-2">
+            <li class="text-white">Task: {{ .Name }}</li>
+            <li class="text-white">TaskID : {{ .ID }}</li>
+            <li class="text-green-200">Nickname: {{ $.User.Nickname }}</li>
+
+            <button class="bg-red-400 text-white" hx-delete="/delete/{{ .ID }}">Delete</button>
+        </div>
+        {{ end }}
+
+    </div>
+</ul>

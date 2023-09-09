@@ -19,13 +19,26 @@ body {
 
     <ul>
     {{ range .tasks }}
-        <li class="text-white">{{ .Name }}</li>
+        <div class="bg-gray-900 m-2">
+        <li class="text-white">Task: {{ .Name }}</li>
+        <li class="text-white">TaskID : {{ .ID }}</li>
+        <li class="text-blue-200">UserID: {{ .User.ID }}</li>
+        <li class="text-red-200">Nickname: {{ .User.Nickname }}</li>
+
+        <button class="bg-red-400 text-white"
+            hx-delete="/delete/{{ .ID }}">Delete</button>
+        </div>
         {{ end }}
     </ul>
 
+                <a href="/profile">
+				    <img class="avatar" src="{{.profile.picture}}"/>
+                </a>
 
-				<img class="avatar" src="{{.profile.picture}}"/>
 				<h2 class="text-red-500">Welcome {{ .profile.nickname }}</h2>
+                <a 
+                    class="text-red-500"
+                    href="logout">Logout</a>
 
 
 <form 
