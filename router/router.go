@@ -30,11 +30,11 @@ func New(auth *auth.Authenticator) *gin.Engine {
 	router.GET("/callback", handlers.Callback(auth))
 	router.GET("/user", middleware.IsAuthenticated, handlers.User)
 	router.GET("/logout", handlers.Logout)
-    router.POST("/add", middleware.IsAuthenticated, handlers.CreateTask)
+  router.POST("/add", middleware.IsAuthenticated, handlers.CreateTask)
 	router.GET("/check", middleware.IsAuthenticated, handlers.CheckIfExists)
 	router.GET("/users", middleware.IsAuthenticated, handlers.GetUsers)
 	router.GET("/tasks", middleware.IsAuthenticated, handlers.GetTasks)
-    router.DELETE("/delete/:id", middleware.IsAuthenticated, handlers.DeleteTask)
+  router.DELETE("/delete/:id", middleware.IsAuthenticated, handlers.DeleteTask)
 	router.GET("/profile", middleware.IsAuthenticated, handlers.Profile)
 
 	return router
