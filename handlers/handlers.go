@@ -128,6 +128,7 @@ func CreateTask(ctx *gin.Context) {
         ctx.JSON(404, gin.H{
             "error": "El usuario no existe",
         })
+        return
         // redirect
     }
 
@@ -141,32 +142,6 @@ func CreateTask(ctx *gin.Context) {
 	db.Create(&task)
 }
 
-
-func CheckIfExists(ctx *gin.Context) {
-    db := database.DB
-    var user models.User
-
-    session := sessions.Default(ctx)
-    profile := session.Get("profile")
-
-    sub := profile.(map[string]interface{})["sub"].(string) 
-    nickname := profile.(map[string]interface{})["nickname"].(string) 
-
-    if err := db.First(&user, "sub = ?", sub).Error; err != nil {
-        user = models.User{
-            Sub:      sub,
-            Nickname: nickname,
-        }
-        db.Create(&user)
-        ctx.JSON(200, gin.H{
-            "message": "Usuario creado con éxito :D",
-        })
-    } else {
-        ctx.JSON(200, gin.H{
-            "error": "El usuario ya existe y no se creó",
-        })
-    }
-}
 
 func User(ctx *gin.Context) {
     db := database.DB
@@ -276,6 +251,10 @@ func Callback(auth *auth.Authenticator) gin.HandlerFunc {
 
 		session.Set("access_token", token.AccessToken)
 		session.Set("profile", profile)
+    // print profile
+    // agarar sub y nickname
+    // Si existe pass
+    // Si no existe crealo
 
 		if err := session.Save(); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
@@ -284,4 +263,31 @@ func Callback(auth *auth.Authenticator) gin.HandlerFunc {
 
 		ctx.Redirect(http.StatusTemporaryRedirect, "/user")
 	}
+}
+
+// Esta logica en el callback 
+func CheckIfExists(ctx *gin.Context) {
+    db := database.DB
+    var user models.User
+
+    session := sessions.Default(ctx)
+    profile := session.Get("profile")
+
+    sub := profile.(map[string]interface{})["sub"].(string) 
+    nickname := profile.(map[string]interface{})["nickname"].(string) 
+
+    if err := db.First(&user, "sub = ?", sub).Error; err != nil {
+        user = models.User{
+            Sub:      sub,
+            Nickname: nickname,
+        }
+        db.Create(&user)
+        ctx.JSON(200, gin.H{
+            "message": "Usuario creado con éxito :D",
+        })
+    } else {
+        ctx.JSON(200, gin.H{
+            "error": "El usuario ya existe y no se creó",
+        })
+    }
 }
